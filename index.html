@@ -1,0 +1,569 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tennis Team Match Line-Up Analyzer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EFF2EE; --card:#FFFFFF; --ink:#14211F; --muted:#5C6E6B;
+  --court:#126C6B; --clay:#A8322D; --amber:#B8791F; --line:#D5DDD8; --deep:#0B2A2C;
+  --home:#126C6B; --guest:#A8322D;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font:16px/1.55 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:32px 22px 80px}
+h1,h2,h3{font-family:"Barlow Condensed",Impact,sans-serif;font-weight:700;letter-spacing:.01em;margin:0}
+h1{font-size:clamp(32px,5.4vw,50px);line-height:.98;text-transform:uppercase}
+h2{font-size:23px;text-transform:uppercase;letter-spacing:.05em}
+h3{font-size:16px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.mono{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+header{border-bottom:3px solid var(--deep);padding-bottom:14px}
+.svcline{border-bottom:1px solid var(--line);margin-bottom:26px;padding:10px 0}
+.lede{max-width:60ch;color:var(--muted);margin:0}
+section{margin-top:30px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:3px;padding:20px}
+.head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+.head p{margin:0;color:var(--muted);font-size:14px;max-width:62ch}
+.tag{font:600 10.5px Inter;letter-spacing:.09em;text-transform:uppercase;padding:3px 8px;border-radius:2px;color:#fff}
+.tagH{background:var(--home)}.tagG{background:var(--guest)}
+label{display:block;font:600 11.5px Inter;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+input[type=text]{width:100%;padding:12px 13px;border:1px solid var(--line);border-radius:3px;
+  font-family:"IBM Plex Mono",monospace;font-size:15px;color:var(--ink);background:#FBFCFB;letter-spacing:.02em}
+input:focus-visible,button:focus-visible{outline:2px solid var(--court);outline-offset:2px}
+.bh{border-left:3px solid var(--home);padding-left:12px}
+.bg{border-left:3px solid var(--guest);padding-left:12px;margin-top:18px}
+.teamstat{display:flex;gap:22px;flex-wrap:wrap;margin-top:8px;font-size:13px;color:var(--muted)}
+.teamstat b{font-family:"IBM Plex Mono",monospace;color:var(--ink);font-weight:600}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:18px}
+button{font:600 14px Inter,sans-serif;padding:10px 18px;border-radius:3px;cursor:pointer;background:var(--deep);color:#fff;border:1px solid var(--deep)}
+button.ghost{background:transparent;color:var(--deep)}
+button:hover{opacity:.88}
+.hint{font-size:13px;color:var(--muted)}
+.err{color:var(--clay);font-size:13.5px;margin-top:10px;font-weight:500;min-height:1px}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{padding:8px 9px;text-align:left;border-bottom:1px solid var(--line)}
+th{font:600 11.5px Inter;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+td.n{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+.tier{font:600 11px Inter;text-transform:uppercase;letter-spacing:.05em;padding:3px 8px;border-radius:2px;white-space:nowrap}
+.t0{background:#DCEBE6;color:#0C4A42}.t1{background:#E4EEDC;color:#3D5A28}
+.t2{background:#F6E7CC;color:#7A4E0C}.t3{background:#F5DAD6;color:#7E241F}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-top:12px}
+.sw{display:inline-block;width:22px;height:4px;vertical-align:middle;margin-right:6px;border-radius:2px}
+.scroll{overflow-x:auto}
+svg{display:block;max-width:100%}
+.note{font-size:13px;color:var(--muted);border-left:2px solid var(--line);padding-left:12px;margin-top:14px}
+.hide{display:none}
+.overall{display:flex;align-items:baseline;gap:12px;margin:16px 0 4px;flex-wrap:wrap}
+.overall .big{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:46px;line-height:.9;color:var(--guest)}
+.overall .lbl{font:600 12px Inter;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.blk{border-top:1px solid var(--line);padding-top:20px;margin-top:22px}
+.blk:first-of-type{border-top:0;padding-top:0;margin-top:0}
+.sysname{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.sysname h3{color:var(--ink)}
+.chip{font:500 11.5px "IBM Plex Mono",monospace;background:#F3F6F3;border:1px solid var(--line);
+  padding:2px 8px;border-radius:2px;color:var(--muted)}
+.delta{font:600 13px Inter}
+.notes{margin-top:20px;border-top:1px solid var(--line)}
+.notes>summary{list-style:none;cursor:pointer;padding:13px 0 2px;
+  font:600 11.5px Inter;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);
+  display:flex;align-items:center;gap:8px}
+.notes>summary::-webkit-details-marker{display:none}
+.notes>summary::after{content:"";width:7px;height:7px;border-right:1.8px solid var(--muted);
+  border-bottom:1.8px solid var(--muted);transform:rotate(45deg) translate(-2px,-2px);
+  transition:transform .18s ease}
+.notes[open]>summary::after{transform:rotate(-135deg) translate(-3px,-3px)}
+.notes>summary:hover{color:var(--ink)}
+.notes>summary:focus-visible{outline:2px solid var(--court);outline-offset:3px}
+@media(prefers-reduced-motion:reduce){.notes>summary::after{transition:none}}
+.expl{padding-top:10px;font-size:13.5px;color:var(--muted)}
+.expl p{margin:0 0 12px;max-width:66ch}
+.expl b{color:var(--ink)}
+.kd{width:auto;font-size:12.5px;margin:4px 0 12px}
+.kd td,.kd th{padding:5px 12px 5px 0;border:0;border-bottom:1px solid #EDF1EE}
+.kd td.n{font-family:"IBM Plex Mono",monospace}
+.mtx{font-size:11.5px;border-collapse:collapse;white-space:nowrap}
+.mtx th,.mtx td{padding:5px 7px;border:1px solid #E6EBE7;text-align:center;
+  font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+.mtx thead th{background:var(--deep);color:#fff;font-family:Inter;font-size:10.5px;letter-spacing:.04em}
+.mtx tbody th{background:#F3F6F3;font-family:Inter;font-weight:600;font-size:11px}
+@media(prefers-reduced-motion:no-preference){.fade{animation:f .35s ease both}@keyframes f{from{opacity:0;transform:translateY(6px)}}}
+</style>
+
+<div class="wrap">
+<header><h1>Tennis Team Match Line-Up Analyzer</h1></header>
+<div class="svcline">
+  <p class="lede">Six singles matches, #1 through #6. The home team plays its ladder honestly. The guest team
+  may reorder. Test an order of your own, or let the page search all 720 of them for the best stack, and see
+  what each scoring system does about it.</p>
+</div>
+
+<section>
+  <div class="card">
+    <div class="head"><h2>Line-ups</h2>
+      <p>Six UTR ratings per team, #1 through #6. Commas or spaces both work.</p></div>
+    <div class="bh">
+      <label for="home"><span class="tag tagH">Home</span> &nbsp;plays in true order</label>
+      <input type="text" id="home" value="10, 8.5, 8.0, 7.0, 6.0, 5.0" spellcheck="false">
+      <div class="teamstat" id="hstat"></div>
+    </div>
+    <div class="bg">
+      <label for="guest"><span class="tag tagG">Guest</span> &nbsp;may stack</label>
+      <input type="text" id="guest" value="9.0, 8.2, 7.5, 6.0, 5.0, 4.0" spellcheck="false">
+      <div class="teamstat" id="gstat"></div>
+    </div>
+    <div class="row">
+      <button id="go">Analyze line-ups</button>
+      <button class="ghost" id="save">Set as default</button>
+      <span class="hint" id="saved"></span>
+    </div>
+    <div class="err" id="err"></div>
+  </div>
+</section>
+
+<div id="out">
+
+<section>
+  <div class="card fade">
+    <div class="head"><h2>Ladder map</h2>
+      <p>Both ladders on one UTR scale. The bar between two players is colored by the size of the drop —
+      long red bars are what makes stacking pay.</p></div>
+    <div class="scroll"><svg id="ladder"></svg></div>
+    <div class="legend">
+      <span><i class="sw" style="background:#126C6B"></i>drop under 0.4</span>
+      <span><i class="sw" style="background:#6E9E5A"></i>0.4 to 0.8</span>
+      <span><i class="sw" style="background:#B8791F"></i>0.8 to 1.2</span>
+      <span><i class="sw" style="background:#A8322D"></i>over 1.2</span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="card fade">
+    <div class="head"><h2>Honest match-ups</h2>
+      <p>Position by position, if the guest team also plays in true order. The overall figure uses
+      equal weights, today&rsquo;s rules: four match wins take the meet, and 3&ndash;3 is a tie.</p></div>
+    <div class="overall">
+      <span class="big" id="honOverall">—</span>
+      <span class="lbl">guest win<br>overall</span>
+      <span class="hint" id="honTie"></span>
+    </div>
+    <svg id="pos"></svg>
+    <div id="honNote"></div>
+  </div>
+</section>
+
+<section>
+  <div class="card fade">
+    <div class="head"><h2>Guest custom stacking</h2>
+      <p>Try an order yourself. Enter the guest&rsquo;s six ladder ranks in the order they will play,
+      #1 through #6 &mdash; so <b>6 1 2 3 4 5</b> means their weakest player goes up top and everyone else
+      slides down a line. Scored with equal weights, today&rsquo;s rules.</p></div>
+    <div style="max-width:340px">
+      <label for="ord">Guest playing order, by ladder rank</label>
+      <input type="text" id="ord" value="6 1 2 3 4 5" spellcheck="false">
+    </div>
+    <div class="err" id="orderr"></div>
+    <div id="caseCustom"></div>
+  </div>
+</section>
+
+<section>
+  <div class="card fade">
+    <div class="head"><h2>Guest stacking analyzer (Case A: Current Weight)</h2>
+      <p>Equal weights, today&rsquo;s rules. The guest searches all 720 orderings and keeps the one that
+      maximizes its own chance.</p></div>
+    <div id="caseA"></div>
+  </div>
+</section>
+
+<section>
+  <div class="card fade">
+    <div class="head"><h2>Guest stacking analyzer (Case B: Proposed Weight)</h2>
+      <p>The proposed weights, 3 &ndash; 2 &ndash; 2 &ndash; 1 &ndash; 1 &ndash; 1. Same search,
+      different scoring.</p></div>
+    <div id="caseB"></div>
+  </div>
+</section>
+
+<section>
+  <div class="card fade">
+    <div class="head"><h2>Guest stacking analyzer (Case C: Custom Weight)</h2>
+      <p>Your own weights. Any six non-negative numbers.</p></div>
+    <div style="max-width:340px">
+      <label for="cw">Custom weights, #1 to #6</label>
+      <input type="text" id="cw" value="5, 4, 3, 3, 2, 1" spellcheck="false">
+    </div>
+    <div class="err" id="cwerr"></div>
+    <div id="caseC"></div>
+  </div>
+</section>
+
+<section>
+  <div class="card fade">
+    <div class="head"><h2>Reference: win probability by UTR difference</h2>
+      <p>Every match percentage on this page is looked up here.</p></div>
+    <details class="notes"><summary>Notes &mdash; the win probability table</summary>
+      <div class="expl">
+      <p>This is the chance the <b>higher-rated</b> player wins. Find the row for the two players&rsquo;
+      average rating, then the column for the gap between them. For example a 10.0 against a 9.0 has an
+      average of 9.5 and a gap of 1.0, which lands between the 9 and 10 rows at about 88.5% &mdash; so the
+      9.0 player wins roughly 11.5% of the time.</p>
+      <div class="scroll"><table class="mtx" id="mtx"></table></div>
+      <p style="margin-top:14px">These are estimates, not official UTR Sports numbers. Treat any cell as good
+      to about 3 to 5 percentage points either way for a normal junior match, and looser than that for elite
+      players, ratings that have gone stale, injuries, or an unfamiliar surface. Gaps wider than 2.0 are not
+      in the table and get extended using the same curve (about 2.07 per UTR point).</p>
+      <p class="hint" style="margin:0">Notice that the same gap is worth slightly less as you go down the
+      table. A 1.0 gap is 89% for players averaging UTR 4, but 88% for players averaging UTR 12 &mdash;
+      stronger juniors are packed closer together in real ability than their ratings suggest.</p>
+      </div></details>
+  </div>
+</section>
+
+</div>
+</div>
+
+<script>
+/* ---------- UTR win-probability model ---------- */
+const DL=[0,.1,.2,.25,.3,.4,.5,.75,1,1.25,1.5,1.75,2];
+const MEANS=[4,5,6,7,8,9,10,11,12,13,14];
+const TB=[[50,56,61,64,66,71,75,83,89,93,96,97,98],[50,56,61,64,66,71,75,83,89,93,96,97,98],
+[50,55,61,63,66,70,74,83,89,93,96,97,98],[50,55,60,63,65,70,74,83,89,93,96,97,98],
+[50,55,60,63,65,70,74,83,89,93,96,97,98],[50,55,60,62,65,69,73,82,89,93,96,97,98],
+[50,55,60,62,64,69,73,82,88,93,96,97,98],[50,55,59,62,64,69,73,82,88,93,96,97,98],
+[50,55,59,62,64,69,73,82,88,93,96,97,98],[50,55,59,62,64,69,73,82,88,93,96,97,98],
+[50,55,59,62,64,69,73,82,88,93,96,97,98]].map(r=>r.map(v=>v/100));
+function row(m){const c=Math.min(14,Math.max(4,m)),i=Math.min(9,Math.floor(c-4)),t=c-4-i;
+  return TB[i].map((v,k)=>v*(1-t)+TB[i+1][k]*t);}
+function pHigh(a,b){const m=(a+b)/2,d=Math.abs(a-b),r=row(m);
+  if(d<=2){let j=0;while(j<DL.length-2&&DL[j+1]<d)j++;
+    const t=(d-DL[j])/(DL[j+1]-DL[j]);return r[j]*(1-t)+r[j+1]*t;}
+  const a2=r[12],lg=Math.log(a2/(1-a2))+2.07*(d-2);return 1/(1+Math.exp(-lg));}
+function pBeats(x,y){return x===y?.5:(x>y?pHigh(x,y):1-pHigh(x,y));}
+
+/* ---------- combinatorics ---------- */
+const PERMS=(()=>{const r=[],a=[0,1,2,3,4,5];
+  (function go(k){if(k===6){r.push(a.slice());return;}
+    for(let i=k;i<6;i++){[a[k],a[i]]=[a[i],a[k]];go(k+1);[a[k],a[i]]=[a[i],a[k]];}})(0);return r;})();
+const SUB=[...Array(64)].map((_,s)=>[...Array(6)].map((_,i)=>(s>>i)&1));
+function scores(w){const T=w.reduce((a,b)=>a+b,0);
+  return SUB.map(m=>{const g=m.reduce((a,b,i)=>a+b*w[i],0);return g>T-g?1:(g===T-g?0.5:0);});}
+const EQW=[1,1,1,1,1,1],EQ=scores(EQW);
+
+function evalOrder(guest,home,perm,ind){
+  const p=perm.map((pi,i)=>pBeats(guest[pi],home[i]));
+  let win=0,tie=0;
+  for(let s=0;s<64;s++){const v=ind[s];if(!v)continue;
+    let q=1;for(let i=0;i<6;i++)q*=SUB[s][i]?p[i]:1-p[i];
+    if(v===1)win+=q;else tie+=q;}
+  return{win,tie,share:win+tie/2,p,perm};
+}
+function bestStack(guest,home,ind){
+  let best=null;
+  for(const perm of PERMS){const r=evalOrder(guest,home,perm,ind);
+    if(!best||r.share>best.share)best=r;}
+  return best;
+}
+
+/* ---------- helpers ---------- */
+const NS="http://www.w3.org/2000/svg";
+function el(t,a={}){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e;}
+function txt(p,x,y,s,o={}){const t=el("text",{x,y,...o});t.textContent=s;p.appendChild(t);return t;}
+function gapColor(g){return g<.4?"#126C6B":g<.8?"#6E9E5A":g<1.2?"#B8791F":"#A8322D";}
+const TIERS=[[.3,"Low","t0"],[.6,"Moderate","t1"],[.9,"High","t2"],[99,"Severe","t3"]];
+const tier=g=>TIERS.find(t=>g<t[0]);
+const gapsOf=r=>{const g=[];for(let k=0;k<5;k++)g.push(r[k]-r[k+1]);return g;};
+const sum=a=>a.reduce((x,y)=>x+y,0);
+
+function parsePerm(str){
+  const n=(str.match(/\d+/g)||[]).map(Number);
+  if(n.length!==6)return{err:`needs exactly six numbers (found ${n.length})`};
+  const seen=[...n].sort().join(",");
+  if(seen!=="1,2,3,4,5,6")return{err:"must use each rank 1 to 6 exactly once"};
+  return{perm:n.map(v=>v-1)};
+}
+function parseSix(str,max){
+  const n=(str.match(/-?\d+(?:\.\d+)?/g)||[]).map(Number);
+  if(n.length!==6)return{err:`needs exactly six numbers (found ${n.length})`};
+  if(n.some(v=>!(v>=0&&v<=max)))return{err:`values must fall between 0 and ${max}`};
+  return{r:n};
+}
+
+/* ---------- position match-up chart ---------- */
+function drawPositions(svg,H,Gord,ranks){
+  svg.innerHTML="";
+  const W=760,L=126,R=170,T=26,rh=32,Hh=T+rh*6+30;
+  svg.setAttribute("viewBox",`0 0 ${W} ${Hh}`);svg.setAttribute("width",W);
+  const bw=W-L-R;
+  txt(svg,L-10,T-9,"HOME",{"text-anchor":"end",fill:"#126C6B","font-size":12,"font-family":"Inter",
+    "font-weight":600,"letter-spacing":".06em"});
+  txt(svg,L+bw+10,T-9,"GUEST",{fill:"#A8322D","font-size":12,"font-family":"Inter",
+    "font-weight":600,"letter-spacing":".06em"});
+  txt(svg,L+bw+162,T-9,"GUEST WIN",{"text-anchor":"end",fill:"#5C6E6B","font-size":12,
+    "font-family":"Inter","font-weight":600,"letter-spacing":".06em"});
+  for(let i=0;i<6;i++){
+    const y=T+rh*i+rh/2,pg=pBeats(Gord[i],H[i]),gw=bw*pg;
+    /* a line is only "sacrificed" if a WEAKER player than the honest one was moved into it */
+    const moved=ranks?ranks[i]>i+1:false, sac=moved&&pg<.2;
+    svg.appendChild(el("rect",{x:L,y:y-10,width:bw-gw,height:20,fill:"#126C6B",opacity:.85,rx:2}));
+    svg.appendChild(el("rect",{x:L+bw-gw,y:y-10,width:gw,height:20,fill:"#A8322D",opacity:.85,rx:2}));
+    txt(svg,L-10,y+5,`#${i+1}   ${H[i].toFixed(1)}`,{"text-anchor":"end",fill:"#14211F","font-size":13,
+      "font-family":"IBM Plex Mono, monospace"});
+    txt(svg,L+bw+10,y+5,Gord[i].toFixed(1)+(ranks?` (${ranks[i]})`:""),
+      {fill:"#14211F","font-size":13,"font-family":"IBM Plex Mono, monospace"});
+    txt(svg,L+bw+162,y+6,(pg*100).toFixed(0)+"%",{"text-anchor":"end",
+      fill:sac?"#9AA8A5":"#14211F","font-size":16,"font-weight":600,
+      "font-family":"IBM Plex Mono, monospace"});
+    if(sac)txt(svg,L+bw+108,y+6,"sac",{"text-anchor":"end",fill:"#B8791F","font-size":10.5,
+      "font-family":"Inter","font-weight":600,"letter-spacing":".05em"});
+  }
+}
+
+/* ---------- explanation under the honest chart ---------- */
+function explain(H,G,hon){
+  const p=G.map((v,i)=>pBeats(v,H[i])),dist=Array(7).fill(0);
+  for(let s=0;s<64;s++){let q=1,k=0;
+    for(let i=0;i<6;i++){const b=(s>>i)&1;q*=b?p[i]:1-p[i];k+=b;}
+    dist[k]+=q;}
+  const win=dist[4]+dist[5]+dist[6],tie=dist[3];
+  const pc=x=>(x*100).toFixed(1)+"%";
+  const pc2=x=>(x>0&&x<0.00005)?"under 0.01%":(x*100).toFixed(2)+"%";
+  let rows="";
+  dist.forEach((v,k)=>{
+    const w=k>=4?"guest takes the meet":k===3?"3\u20133 \u2014 nobody wins it":"home takes the meet";
+    rows+=`<tr><td class="n">${k} win${k===1?"":"s"}</td><td class="n">${pc2(v)}</td><td>${w}</td></tr>`;});
+  return `<details class="notes"><summary>Notes &mdash; how the ${pc(hon.share)} is computed</summary>
+   <div class="expl">
+   <p>Every percentage in the rows above comes from the reference table at the bottom of this page. You take
+   the two players&rsquo; ratings, find their average and how far apart they are, and look up the answer. For this
+   line-up the guest&rsquo;s six chances are <b>${p.map(x=>(x*100).toFixed(0)+"%").join(", ")}</b>.</p>
+   <p>Each match is either a win or a loss for the guest, and there are six of them, so the day can end
+   <b>2 &times; 2 &times; 2 &times; 2 &times; 2 &times; 2 = 64</b> different ways. Multiply the six numbers
+   together to see how likely each ending is, then sort all 64 by how many matches the guest won:</p>
+   <table class="kd"><tbody>${rows}</tbody></table>
+   <p>Right now every match counts the same, so the guest needs to win <b>at least 4</b> of them, which
+   covers the last three rows above. That happens <b>${pc2(win)}</b> of the time. A 3&ndash;3 split happens <b>${pc2(tie)}</b> of the time, and we count a
+   tie as half a win since nobody actually won on the court.</p>
+   <p>Put those together and you get ${pc2(win)} plus half of ${pc2(tie)}, which is
+   <b>${pc(hon.share)}</b>.</p>
+   <p class="hint" style="margin:0">Worth knowing: this math treats the six matches as totally separate. In a
+   real meet, weather, momentum and nerves can carry from one court to the next.</p></div></details>`;
+}
+
+/* ---------- ladder map ---------- */
+function ladder(H,G){
+  const s=document.getElementById("ladder");s.innerHTML="";
+  const W=760,L=86,R=30,T=40,B=52,H_=250,rowY=[T+42,T+132];
+  s.setAttribute("viewBox",`0 0 ${W} ${H_}`);s.setAttribute("width",W);
+  const all=[...H,...G],lo=Math.floor(Math.min(...all)*2)/2-.4,hi=Math.ceil(Math.max(...all)*2)/2+.4;
+  const x=v=>L+(v-lo)/(hi-lo)*(W-L-R);
+  for(let v=Math.ceil(lo);v<=hi;v++){
+    s.appendChild(el("line",{x1:x(v),x2:x(v),y1:T,y2:H_-B,stroke:"#E6EBE7"}));
+    txt(s,x(v),H_-B+18,v.toFixed(0),{"text-anchor":"middle",fill:"#5C6E6B","font-size":11,
+      "font-family":"IBM Plex Mono, monospace"});
+  }
+  txt(s,L+(W-L-R)/2,H_-B+36,"UTR rating",{"text-anchor":"middle",fill:"#5C6E6B","font-size":11.5,
+    "font-family":"Inter"});
+  [{r:H,y:rowY[0],c:"#126C6B",lab:"HOME",sub:"honest order"},
+   {r:G,y:rowY[1],c:"#A8322D",lab:"GUEST",sub:"may stack"}].forEach(t=>{
+    txt(s,L-16,t.y-3,t.lab,{"text-anchor":"end",fill:t.c,"font-size":15,
+      "font-family":"Barlow Condensed","font-weight":700,"letter-spacing":".05em"});
+    txt(s,L-16,t.y+12,t.sub,{"text-anchor":"end",fill:"#9AA8A5","font-size":10,"font-family":"Inter"});
+    for(let k=0;k<5;k++){
+      const g=t.r[k]-t.r[k+1];
+      s.appendChild(el("line",{x1:x(t.r[k]),x2:x(t.r[k+1]),y1:t.y,y2:t.y,
+        stroke:gapColor(g),"stroke-width":g<.4?3:5,"stroke-linecap":"round"}));
+    }
+    t.r.forEach((v,k)=>{
+      s.appendChild(el("circle",{cx:x(v),cy:t.y,r:6,fill:"#fff",stroke:t.c,"stroke-width":1.9}));
+      txt(s,x(v),t.y-14,"#"+(k+1),{"text-anchor":"middle",fill:"#9AA8A5","font-size":9.5,
+        "font-family":"Inter"});
+      txt(s,x(v),t.y+22,v.toFixed(1),{"text-anchor":"middle",fill:"#14211F","font-size":10,
+        "font-family":"IBM Plex Mono, monospace"});
+    });
+  });
+}
+
+/* ---------- stacking analyzer, one case at a time ---------- */
+function minWinSets(ind){
+  const wins=[];for(let s=0;s<64;s++)if(ind[s]===1)wins.push(s);
+  return wins.filter(s=>!wins.some(t=>t!==s&&(t&s)===t))
+             .map(s=>[...Array(6).keys()].filter(i=>s>>i&1));
+}
+function ruleText(w,ind){
+  const T=sum(w),need=T/2,ms=minWinSets(ind);
+  const sizes=[...new Set(ms.map(m=>m.length))];
+  const C=(n,k)=>{let r=1;for(let i=0;i<k;i++)r=r*(n-i)/(i+1);return Math.round(r);};
+  let combo;
+  if(sizes.length===1&&ms.length===C(6,sizes[0]))
+    combo=`in other words, <b>any ${sizes[0]} of the 6</b> matches`;
+  else{
+    const show=ms.slice(0,6).map(m=>m.map(i=>"#"+(i+1)).join("+"));
+    combo=`the smallest sets of wins that get there are <b>${show.join(", ")}</b>`+
+      (ms.length>6?` and ${ms.length-6} others`:"");
+  }
+  return{T,need,combo};
+}
+function renderCase(id,sy,H,G,fixed){
+  const box=document.getElementById(id);if(!box)return;
+  const hon=evalOrder(G,H,[0,1,2,3,4,5],sy.ind);
+  const top=bestStack(G,H,sy.ind);
+  const st=fixed?evalOrder(G,H,fixed,sy.ind):top;
+  const ranks=st.perm.map(i=>i+1),Gord=st.perm.map(i=>G[i]),d=st.share-hon.share;
+  const col=d>.25?"var(--clay)":d>.1?"var(--amber)":"var(--court)";
+  const dTxt=(d<0?"\u2212":"+")+Math.abs(d*100).toFixed(1)+" pts";
+  const pc=x=>(x*100).toFixed(1)+"%";
+  const pc2=x=>(x>0&&x<0.00005)?"under 0.01%":(x*100).toFixed(2)+"%";
+  const R=ruleText(sy.w,sy.ind);
+  const sac=ranks.map((r,i)=>(r>i+1&&st.p[i]<.2)?i+1:0).filter(Boolean);
+  const moved=ranks.some((r,i)=>r!==i+1);
+  box.innerHTML=`
+    <div class="sysname"><h3>${sy.n}</h3><span class="chip">${sy.w.join(" \u00b7 ")}</span>
+      <span class="hint">${sy.sub}</span></div>
+    <div class="overall"><span class="big">${pc(st.share)}</span>
+      <span class="lbl">guest win<br>overall</span>
+      <span class="delta" style="color:${col}">${dTxt} vs. honest ${pc(hon.share)}</span>
+      <span class="hint">${st.tie<0.0005?"ties impossible":"tie "+pc(st.tie)}</span></div>
+    <svg></svg>
+    <details class="notes"><summary>Notes &mdash; how the ${pc(st.share)} is computed</summary>
+      <div class="expl">
+      <p>The number in parentheses after each guest rating is where that player sits on the guest&rsquo;s own
+      ladder, so <b>(4)</b> means their fourth-best player. If the numbers run 1, 2, 3, 4, 5, 6 straight down,
+      nobody has been moved.</p>
+      <p><b>&ldquo;sac&rdquo;</b> is short for <b>sacrificed</b>. It marks a line where the guest moved in a
+      weaker player than the one who belongs there, and that player has under a 20% chance. Those matches are
+      being handed over on purpose so the guest&rsquo;s better players get easier opponents somewhere else.
+      A line the guest was always going to lose does <i>not</i> count &mdash; giving away a match you were
+      never winning costs you nothing. ${sac.length
+        ?`Here the guest hands over <b>${sac.map(i=>"#"+i).join(" and ")}</b>.`
+        :(moved?"With this order the guest shuffles its line-up but never hands a line over."
+               :"Here the guest plays its honest ladder, so nothing is handed over.")}</p>
+      <p>${fixed
+        ?`You picked this order: <b>${Gord.map((v,i)=>v.toFixed(1)+" ("+ranks[i]+")").join(", ")}</b>.`
+        :`The page tried <b>all 720</b> ways the guest could line up its six players against the home team and
+          kept the best one: <b>${Gord.map((v,i)=>v.toFixed(1)+" ("+ranks[i]+")").join(", ")}</b>.`}
+      That gives the guest these chances match by match:
+      <b>${st.p.map(x=>(x*100).toFixed(0)+"%").join(", ")}</b>.</p>
+      <p>In this case a win is worth <b>${sy.w.join(", ")}</b> points at #1 through #6. That is
+      <b>${R.T}</b> points on the table, and you need more than <b>${R.need}</b> of them to take the meet
+      &mdash; ${R.combo}.</p>
+      <p>Same idea as before: work out how likely each of the 64 possible endings is, then check each one
+      against that target.</p>
+      <table class="kd"><tbody>
+        <tr><td class="n">${pc2(st.win)}</td><td>guest gets enough points to win</td></tr>
+        <tr><td class="n">${pc2(st.tie)}</td><td>dead even, counted as half a win</td></tr>
+        <tr><td class="n">${pc2(1-st.win-st.tie)}</td><td>home takes the meet</td></tr>
+      </tbody></table>
+      <p>Wins plus half the ties gives <b>${pc(st.share)}</b>. Playing straight up the guest would have
+      ${pc(hon.share)}, so this order ${d<0?"actually <b>costs</b> the guest"
+        :d<0.0005?"is worth about":"is worth"} <b>${Math.abs(d*100).toFixed(1)} points</b>${
+        d<0?" compared with just playing its true ladder":""}.${
+        fixed?` For comparison, the best of all 720 orders would get the guest <b>${pc(top.share)}</b>`+
+          (top.share-st.share>=0.0005
+            ?`, so your order leaves ${((top.share-st.share)*100).toFixed(1)} points on the table.`
+            :` \u2014 your order is as good as it gets under these rules.`):""}</p>
+      <p class="hint" style="margin:0">Worth knowing: this math treats the six matches as totally separate. In
+      a real meet, weather, momentum and nerves can carry from one court to the next.</p></div></details>`;
+  drawPositions(box.querySelector("svg"),H,Gord,ranks);
+}
+
+/* ---------- reference matrix ---------- */
+function matrix(){
+  const t=document.getElementById("mtx");
+  let h="<thead><tr><th>Mean UTR</th>"+DL.map(d=>"<th>&Delta; "+String(d)+"</th>").join("")+"</tr></thead><tbody>";
+  MEANS.forEach((m,i)=>{
+    h+="<tr><th>"+m+"</th>"+TB[i].map(v=>{
+      const a=(v-.5)/.5,bg=`rgba(18,108,107,${(0.05+a*0.33).toFixed(3)})`;
+      return `<td style="background:${bg};color:#14211F">${Math.round(v*100)}%</td>`;
+    }).join("")+"</tr>";
+  });
+  t.innerHTML=h+"</tbody>";
+}
+
+/* ---------- run ---------- */
+function analyze(){
+  const a=parseSix(document.getElementById("home").value,17),
+        b=parseSix(document.getElementById("guest").value,17),
+        c=parseSix(document.getElementById("cw").value,1000);
+  const msgs=[];
+  if(a.err)msgs.push("Home line-up "+a.err+".");
+  if(b.err)msgs.push("Guest line-up "+b.err+".");
+  document.getElementById("err").textContent=msgs.join(" ");
+  document.getElementById("out").classList.toggle("hide",!!msgs.length);
+  if(msgs.length)return;
+
+  const H=a.r.slice().sort((x,y)=>y-x),G=b.r.slice().sort((x,y)=>y-x);
+  document.getElementById("hstat").innerHTML=
+    `<span>Total <b>${sum(H).toFixed(1)}</b></span><span>Mean <b>${(sum(H)/6).toFixed(2)}</b></span>`;
+  document.getElementById("gstat").innerHTML=
+    `<span>Total <b>${sum(G).toFixed(1)}</b></span><span>Mean <b>${(sum(G)/6).toFixed(2)}</b></span>`;
+
+  ladder(H,G);
+
+  const hon=evalOrder(G,H,[0,1,2,3,4,5],EQ);
+  document.getElementById("honOverall").textContent=(hon.share*100).toFixed(1)+"%";
+  document.getElementById("honTie").textContent=
+    hon.tie<0.0005?"":`includes a ${(hon.tie*100).toFixed(1)}% chance of a 3–3 tie, counted as half`;
+  drawPositions(document.getElementById("pos"),H,G,[1,2,3,4,5,6]);
+  document.getElementById("honNote").innerHTML=explain(H,G,hon);
+
+  let cw=c.err?null:c.r;
+  if(cw&&sum(cw)<=0){cw=null;c.err="needs at least one weight above zero";}
+  document.getElementById("cwerr").textContent=
+    c.err?"Custom weights "+c.err+" — showing 5, 4, 3, 3, 2, 1 instead.":"";
+  if(!cw)cw=[5,4,3,3,2,1];
+
+  const o=parsePerm(document.getElementById("ord").value);
+  document.getElementById("orderr").textContent=
+    o.err?"Playing order "+o.err+" \u2014 showing 6 1 2 3 4 5 instead.":"";
+  renderCase("caseCustom",{n:"Your chosen order",sub:"scored with equal weights",w:EQW,ind:EQ},H,G,
+             o.err?[5,0,1,2,3,4]:o.perm);
+  renderCase("caseA",{n:"Equal weights",sub:"current rules",w:EQW,ind:EQ},H,G);
+  renderCase("caseB",{n:"Proposed weights",sub:"under consideration",
+             w:[3,2,2,1,1,1],ind:scores([3,2,2,1,1,1])},H,G);
+  renderCase("caseC",{n:"Custom weights",sub:"your input",w:cw,ind:scores(cw)},H,G);
+}
+/* ---------- remembering your line-ups ---------- */
+const KEY="lineup-defaults";
+const store={
+  async get(){
+    try{if(window.storage){const r=await window.storage.get(KEY,false);return r?r.value:null;}}catch(e){}
+    try{return window.localStorage.getItem(KEY);}catch(e){}
+    return null;
+  },
+  async set(v){
+    try{if(window.storage){await window.storage.set(KEY,v,false);return true;}}catch(e){}
+    try{window.localStorage.setItem(KEY,v);return true;}catch(e){}
+    return false;
+  }
+};
+const FIELDS=["home","guest","ord","cw"];
+const val=id=>document.getElementById(id).value;
+
+document.getElementById("go").onclick=analyze;
+document.getElementById("save").onclick=async()=>{
+  const msg=document.getElementById("saved");
+  const bad=[parseSix(val("home"),17).err,parseSix(val("guest"),17).err].some(Boolean);
+  if(bad){msg.textContent="Fix the line-ups above before saving.";return;}
+  analyze();
+  const ok=await store.set(JSON.stringify({home:val("home"),guest:val("guest"),ord:val("ord"),cw:val("cw")}));
+  msg.textContent=ok?"Saved. These load automatically next time."
+                    :"This browser will not let the page save anything.";
+  if(ok)setTimeout(()=>{msg.textContent="";},4000);
+};
+FIELDS.forEach(id=>{const e=document.getElementById(id);
+  e.addEventListener("keydown",ev=>{if(ev.key==="Enter")analyze();});
+  e.addEventListener("change",analyze);
+  e.addEventListener("input",()=>{document.getElementById("saved").textContent="";});});
+
+(async function init(){
+  matrix();
+  const raw=await store.get();
+  if(raw){try{const v=JSON.parse(raw);
+    FIELDS.forEach(k=>{if(typeof v[k]==="string"&&v[k].trim())document.getElementById(k).value=v[k];});
+  }catch(e){}}
+  analyze();
+})();
+</script>
